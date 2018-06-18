@@ -20,10 +20,23 @@ class Qt5Cam(QDialog):
         self.timer.start()
         self.image = None
 
+        self.faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+        self.eyeCascade = cv2.CascadeClassifier('haarcascade_eye.xml')
+        self.faceDetectionButton.setCheckable(True)
+        self.faceDetectionButton.toggled.connect(self.detect_webcam_face)
+        self.face_Enabled = False
+
+
     def update_frame(self):
         ret, self.image = self.capture.read()
         self.image = cv2.flip(self.image, 1)
         self.display_image(self.image, 1)
+
+        if self.face_Enabled:
+            detected_image = self.detect_face(self.image)
+            self.display_image(detected_image, 1)
+        else:
+            self.display_image(self.image, 1)
 
     def display_image(self, img, windows=1):
         qformat = QImage.Format_Indexed8
@@ -42,6 +55,30 @@ class Qt5Cam(QDialog):
         if windows == 2:
             self.cameraColorLabel.setPixmap(QPixmap.fromImage(out_image))
             self.cameraColorLabel.setScaledContents(True)
+
+    def detect_webcam_face(self, status):
+        if status:
+            self.faceDetectionButton.setText('Stop Detection')
+            self.face_Enabled = True
+        else:
+            self.faceDetectionButton.setText('Detect Face And Eye')
+            self.face_Enabled = False
+
+    def detect_face(self, img):
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = self.faceCascade.detectMultiScale(gray, 1.3, 5)
+
+        for (x, y, w, h) in faces:
+            cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+            roi_gray = gray[y:y+h, x:x+w]
+            roi_color = img[y:y+h, x:x+w]
+            eyes = self.eyeCascade.detectMultiScale(roi_gray)
+
+            for (ex, ey, ew, eh) in eyes:
+                cv2.rectangle(roi_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
+
+        return img
 
 
 if __name__ == '__main__':
