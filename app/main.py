@@ -30,6 +30,10 @@ class Qt5Cam(QDialog):
         self.objectDetectionButton.toggled.connect(self.detect_webcam_object)
         self.object_Enabled = False
 
+        self.colorDetectionButton.setCheckable(True)
+        self.colorDetectionButton.toggled.connect(self.detect_webcam_color)
+        self.color_Enabled = False
+
     def update_frame(self):
         ret, self.image = self.capture.read()
         self.image = cv2.flip(self.image, 1)
@@ -44,6 +48,12 @@ class Qt5Cam(QDialog):
         if self.object_Enabled:
             detected_image2 = self.detect_object(self.image)
             self.display_image(detected_image2, 1)
+        else:
+            self.display_image(self.image, 1)
+
+        if self.color_Enabled:
+            detected_image3 = self.detect_color(self.image)
+            self.display_image(detected_image3, 2)
         else:
             self.display_image(self.image, 1)
 
@@ -80,6 +90,14 @@ class Qt5Cam(QDialog):
         else:
             self.objectDetectionButton.setText('Detect Object')
             self.object_Enabled = False
+
+    def detect_webcam_color(self, status):
+        if status:
+            self.colorDetectionButton.setText('Stop Detection')
+            self.color_Enabled = True
+        else:
+            self.colorDetectionButton.setText('Detect Color')
+            self.color_Enabled = False
 
     def detect_face(self, img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -120,6 +138,23 @@ class Qt5Cam(QDialog):
                 cv2.rectangle(img, (startX, startY), (endX, endY), colors[idx], 2)
                 y = startY - 15 if startY - 15 > 15 else startY + 15
                 cv2.putText(img, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, colors[idx], 2)
+
+        return img
+
+    def detect_color(self, img):
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        lower_color = np.array([self.hMin.value(), self.sMin.value(), self.vMin.value()])
+        upper_color = np.array([self.hMax.value(), self.sMax_2.value(), self.vMax.value()])
+        mask = cv2.inRange(hsv, lower_color, upper_color)
+        result = cv2.bitwise_and(img, img, mask=mask)
+        img = result
+
+        self.valueHMinLabel.setText(str(self.hMin.value()))
+        self.valueSMinLabel.setText(str(self.sMin.value()))
+        self.valueVMinLabel.setText(str(self.vMin.value()))
+        self.valueHMaxLabel.setText(str(self.hMax.value()))
+        self.valueSMaxLabel.setText(str(self.sMax_2.value()))
+        self.valueVMaxLabel.setText(str(self.vMax.value()))
 
         return img
 
