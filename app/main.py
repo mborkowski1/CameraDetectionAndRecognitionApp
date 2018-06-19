@@ -22,6 +22,7 @@ class Qt5Cam(QDialog):
 
         self.faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
         self.eyeCascade = cv2.CascadeClassifier('haarcascade_eye.xml')
+        self.bottleCascade = cv2.CascadeClassifier('haarcascade_bottle.xml')
         self.faceDetectionButton.setCheckable(True)
         self.faceDetectionButton.toggled.connect(self.detect_webcam_face)
         self.face_Enabled = False
@@ -80,7 +81,7 @@ class Qt5Cam(QDialog):
             self.faceDetectionButton.setText('Stop Detection')
             self.face_Enabled = True
         else:
-            self.faceDetectionButton.setText('Detect Face And Eye')
+            self.faceDetectionButton.setText('Detect Face, Eye And Bottle')
             self.face_Enabled = False
 
     def detect_webcam_object(self, status):
@@ -102,6 +103,11 @@ class Qt5Cam(QDialog):
     def detect_face(self, img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         faces = self.faceCascade.detectMultiScale(gray, 1.3, 5)
+        bottles = self.bottleCascade.detectMultiScale(gray, 1.3, 5)
+
+        for (x, y, w, h) in bottles:
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            cv2.putText(img, "Bottle", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
         for (x, y, w, h) in faces:
             cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
